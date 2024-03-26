@@ -3,6 +3,7 @@ module.exports=[
   {
     "inputs": [
       { "internalType": "address", "name": "owner", "type": "address" },
+      
       { "internalType": "address", "name": "spender", "type": "address" }
     ],
     "name": "allowance",
